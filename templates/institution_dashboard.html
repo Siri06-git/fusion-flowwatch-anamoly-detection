@@ -501,7 +501,11 @@
                             <td colspan="6" style="text-align:center;
                                                    color:var(--text-muted);padding:3rem 0;">
                                 {% if cohort_size == 0 %}
-                                    Upload a CSV to populate student data.
+                                    {% if selected_year or selected_branch or selected_course %}
+                                        No students found for selected Year, Branch, and Course.
+                                    {% else %}
+                                        Upload a CSV to populate student data.
+                                    {% endif %}
                                 {% else %}
                                     🎉 No students at high or medium risk this week!
                                 {% endif %}

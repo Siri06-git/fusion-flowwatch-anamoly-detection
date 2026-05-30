@@ -233,7 +233,11 @@
                         {% else %}
                         <tr>
                             <td colspan="8" style="text-align:center;color:var(--text-muted);padding:3rem 0;">
-                                No data yet. Upload a CSV above to populate the dashboard.
+                                {% if selected_year or selected_branch or selected_course %}
+                                    No students found for selected Year, Branch, and Course.
+                                {% else %}
+                                    No data yet. Upload a CSV above to populate the dashboard.
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

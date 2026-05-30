@@ -58,6 +58,9 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if 'user_id' not in session:
             return redirect(url_for('home'))
+        if 'portal' + '_mode' not in session and request.endpoint not in ('choose_mode', 'set_mode', 'logout', 'static'):
+            flash('Please choose portal mode first.', 'error')
+            return redirect(url_for('choose_mode'))
         return view(**kwargs)
     return wrapped_view
 
@@ -226,6 +229,8 @@ def institution_dashboard():
     unique_courses.sort()
 
     metrics = _load_cache_metrics(year=year_val, branch=branch_val, course=course_val)
+    if (year_val is not None or branch_val is not None or course_val is not None) and metrics['cohort_size'] == 0:
+        flash('No students found for selected Year, Branch, and Course.', 'error')
     return render_template('institution_dashboard.html',
                            unique_years=unique_years,
                            unique_branches=unique_branches,
@@ -274,6 +279,8 @@ def analytics():
         unique_courses.sort()
         
         metrics = _load_cache_metrics(year=year_val, branch=branch_val, course=course_val)
+        if (year_val is not None or branch_val is not None or course_val is not None) and metrics['cohort_size'] == 0:
+            flash('No students found for selected Year, Branch, and Course.', 'error')
         return render_template('analytics.html',
                                unique_years=unique_years,
                                unique_branches=unique_branches,
@@ -327,6 +334,8 @@ def profile():
             student_query = student_query.filter(Student.course == course_val)
             
         matching_student_ids = [r[0] for r in student_query.order_by(Student.student_id).all()]
+        if (year_val is not None or branch_val is not None or course_val is not None) and not matching_student_ids:
+            error_msg = "No students found for selected Year, Branch, and Course."
         
         if student_id:
             student_obj = session_db.query(Student).filter_by(student_id=student_id).first()
@@ -524,7 +533,10 @@ def upload_csv():
         missing = [c for c in required if c not in csv_columns]
         if missing:
             os.remove(save_path)
-            flash(f"Upload failed – missing columns: {', '.join(missing)}", 'error')
+            if session.get('portal_mode') == 'institution' and any(c in missing for c in ('year', 'branch', 'course')):
+                flash('Please upload Institution CSV with year, branch, and course columns.', 'error')
+            else:
+                flash(f"Upload failed – missing columns: {', '.join(missing)}", 'error')
             return redirect(url_for('analytics'))
         print(f"[FlowWatch] Column check passed. Columns found: {list(csv_columns)}", file=sys.stderr)
     except Exception:
