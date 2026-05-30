@@ -69,7 +69,7 @@ def inject_user():
     )
 
 # ── Helper: parse processed_cache.csv → metrics dict ─────────────────────────
-def _load_cache_metrics():
+def _load_cache_metrics(year=None, branch=None, course=None):
     """
     Reads uploads/processed_cache.csv and returns a dict with all dashboard
     metrics. Returns a dict of zeroes/empty-lists if the file is absent.
@@ -119,6 +119,14 @@ def _load_cache_metrics():
             df['course'] = df['course'].astype(str).str.strip().replace('nan', '')
         else:
             df['course'] = None
+
+        # Apply Phase 47 filters if specified
+        if year is not None and 'year' in df.columns:
+            df = df[df['year'] == year]
+        if branch is not None and 'branch' in df.columns:
+            df = df[df['branch'].astype(str).str.strip().str.lower() == str(branch).strip().lower()]
+        if course is not None and 'course' in df.columns:
+            df = df[df['course'].astype(str).str.strip().str.lower() == str(course).strip().lower()]
 
         cohort_size  = int(df['student_id'].nunique())
         latest_week  = int(df['week_number'].max())
@@ -184,7 +192,22 @@ def institution_dashboard():
     # Redirect Industry users away
     if session.get('portal_mode') != 'institution':
         return redirect(url_for('dashboard'))
-    metrics = _load_cache_metrics()
+        
+    year_param = request.args.get('year', '').strip()
+    branch_param = request.args.get('branch', '').strip()
+    course_param = request.args.get('course', '').strip()
+    
+    year_val = None
+    if year_param:
+        try:
+            year_val = int(float(year_param))
+        except ValueError:
+            pass
+            
+    branch_val = branch_param if branch_param else None
+    course_val = course_param if course_param else None
+    
+    metrics = _load_cache_metrics(year=year_val, branch=branch_val, course=course_val)
     return render_template('institution_dashboard.html', **metrics)
 
 @app.route('/dashboard')
@@ -193,7 +216,7 @@ def dashboard():
     """Industry dashboard – shows live KPIs, risk breakdown, top-risk students."""
     # Redirect Institution users to their dashboard
     if session.get('portal_mode') == 'institution':
-        return redirect(url_for('institution_dashboard'))
+        return redirect(url_for('institution_dashboard', **request.args))
     metrics = _load_cache_metrics()
     return render_template('dashboard.html', **metrics)
 
