@@ -286,8 +286,92 @@ def profile():
     student_id = request.args.get('student_id', '').strip()
     history_list = []
     error_msg = None
-
     student_meta = None
+
+    if session.get('portal' + '_mode') == 'institution':
+        year_param = request.args.get('year', '').strip()
+        branch_param = request.args.get('branch', '').strip()
+        course_param = request.args.get('course', '').strip()
+        
+        year_val = None
+        if year_param:
+            try:
+                year_val = int(float(year_param))
+            except ValueError:
+                pass
+                
+        branch_val = branch_param if branch_param else None
+        course_val = course_param if course_param else None
+        
+        session_db = get_db()
+        unique_years = [r[0] for r in session_db.query(Student.year).distinct().all() if r[0] is not None]
+        unique_branches = [r[0] for r in session_db.query(Student.branch).distinct().all() if r[0]]
+        unique_courses = [r[0] for r in session_db.query(Student.course).distinct().all() if r[0]]
+        
+        unique_years.sort()
+        unique_branches.sort()
+        unique_courses.sort()
+        
+        student_query = session_db.query(Student.student_id)
+        if year_val is not None:
+            student_query = student_query.filter(Student.year == year_val)
+        if branch_val:
+            student_query = student_query.filter(Student.branch == branch_val)
+        if course_val:
+            student_query = student_query.filter(Student.course == course_val)
+            
+        matching_student_ids = [r[0] for r in student_query.order_by(Student.student_id).all()]
+        
+        if student_id:
+            student_obj = session_db.query(Student).filter_by(student_id=student_id).first()
+            if not student_obj:
+                error_msg = f"No student found with ID: '{student_id}'"
+            else:
+                matches_filters = True
+                if year_val is not None and student_obj.year != year_val:
+                    matches_filters = False
+                if branch_val and student_obj.branch != branch_val:
+                    matches_filters = False
+                if course_val and student_obj.course != course_val:
+                    matches_filters = False
+                    
+                if not matches_filters:
+                    error_msg = f"Student ID '{student_id}' exists but does not match the selected filters."
+                else:
+                    student_meta = {
+                        'year': student_obj.year,
+                        'branch': student_obj.branch,
+                        'course': student_obj.course
+                    }
+                    records = (session_db.query(EngagementRecord)
+                               .filter_by(student_id=student_id)
+                               .order_by(EngagementRecord.week_number)
+                               .all())
+                    for r in records:
+                        history_list.append({
+                            'week_number':         int(r.week_number),
+                            'risk_score':          round(float(r.risk_score or 0.0), 1),
+                            'risk_tier':           r.risk_tier,
+                            'avg_quiz_score':      round(float(r.avg_quiz_score or 0.0), 2),
+                            'composite_engagement': round(float(r.composite_engagement or 0.0), 2),
+                        })
+                    if not history_list:
+                        error_msg = f"No record history found for student ID: '{student_id}'"
+                        
+        return render_template('profile.html',
+                               student_id=student_id,
+                               history=history_list,
+                               error_msg=error_msg,
+                               student_meta=student_meta,
+                               unique_years=unique_years,
+                               unique_branches=unique_branches,
+                               unique_courses=unique_courses,
+                               selected_year=year_val,
+                               selected_branch=branch_val,
+                               selected_course=course_val,
+                               matching_student_ids=matching_student_ids)
+
+    # Industry mode search (unchanged)
     if student_id:
         session_db = get_db()
         student_obj = session_db.query(Student).filter_by(student_id=student_id).first()
