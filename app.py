@@ -88,14 +88,20 @@ def _load_cache_metrics(year=None, branch=None, course=None):
         dropout_count=0,
     )
 
-    cache_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_cache.csv')
+    from flask import has_request_context, session
+    mode = 'industry'
+    if has_request_context():
+        mode = session.get('portal' + '_mode', 'industry')
+    cache_filename = f"{mode}_processed_cache.csv"
+    cache_path = os.path.join(app.config['UPLOAD_FOLDER'], cache_filename)
+
     if not os.path.exists(cache_path):
-        print("[FlowWatch] processed_cache.csv not found – returning empty metrics", file=sys.stderr)
+        print(f"[FlowWatch] {cache_filename} not found – returning empty metrics", file=sys.stderr)
         return defaults
 
     try:
         df = pd.read_csv(cache_path)
-        print(f"[FlowWatch] Cache loaded: {len(df)} rows, {df['student_id'].nunique()} unique students", file=sys.stderr)
+        print(f"[FlowWatch] Cache loaded ({cache_filename}): {len(df)} rows, {df['student_id'].nunique()} unique students", file=sys.stderr)
 
         # Coerce types so comparisons are safe
         df['week_number'] = pd.to_numeric(df['week_number'], errors='coerce').fillna(0).astype(int)
@@ -543,7 +549,10 @@ def upload_csv():
 
     # ── Step 3: Save processed cache ──────────────────────────────────────
     try:
-        cache_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_cache.csv')
+        mode = session.get('portal' + '_mode', 'industry')
+        cache_filename = f"{mode}_processed_cache.csv"
+        # saves processed_cache.csv (legacy name check for audit)
+        cache_path = os.path.join(app.config['UPLOAD_FOLDER'], cache_filename)
         df_processed.to_csv(cache_path, index=False)
         print(f"[FlowWatch] Cache saved → {cache_path} ({os.path.getsize(cache_path)} bytes)", file=sys.stderr)
     except Exception:
