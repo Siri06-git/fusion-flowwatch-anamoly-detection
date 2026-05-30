@@ -289,6 +289,11 @@
                     <span class="stat-value" style="color:var(--color-secondary);">{{ anomaly_count }}</span>
                     <span class="stat-label">Anomalies</span>
                 </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:var(--color-error);">{{ dropout_count }}</span>
+                    <span class="stat-label">Dropped Out</span>
+                </div>
             </div>
         </div>
     </div>
@@ -387,6 +392,13 @@
             <span class="acad-card-label">Avg Engagement Score</span>
             <span class="acad-card-value">{{ "%.2f"|format(avg_engagement) }}</span>
             <span class="acad-card-note">Week {{ latest_week }} cohort composite avg</span>
+        </div>
+
+        <div class="acad-card" style="border-color:rgba(239,68,68,0.25);">
+            <span class="acad-card-icon">🎓</span>
+            <span class="acad-card-label">Dropout Count</span>
+            <span class="acad-card-value" style="color:var(--color-error);">{{ dropout_count }}</span>
+            <span class="acad-card-note">Students dropped out in Week {{ latest_week }}</span>
         </div>
 
     </div><!-- /acad-grid -->

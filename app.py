@@ -85,6 +85,7 @@ def _load_cache_metrics(year=None, branch=None, course=None):
         avg_engagement=0.0,
         latest_week=0,
         students=[],
+        dropout_count=0,
     )
 
     cache_path = os.path.join(app.config['UPLOAD_FOLDER'], 'processed_cache.csv')
@@ -140,6 +141,7 @@ def _load_cache_metrics(year=None, branch=None, course=None):
         medium_risk_count = int((df_latest['risk_tier'] == 'Medium').sum())
         low_risk_count    = int((df_latest['risk_tier'] == 'Low').sum())
         avg_engagement    = round(float(df_latest['composite_engagement'].mean()), 2) if not df_latest.empty else 0.0
+        dropout_count     = int((df_latest['dropped_out'] == 1).sum()) if 'dropped_out' in df_latest.columns else 0
 
         print(f"[FlowWatch] KPIs → total={cohort_size}, high={high_risk_count}, "
               f"medium={medium_risk_count}, low={low_risk_count}, anomalies={anomaly_count}", file=sys.stderr)
@@ -157,6 +159,7 @@ def _load_cache_metrics(year=None, branch=None, course=None):
             avg_engagement=avg_engagement,
             latest_week=latest_week,
             students=students,
+            dropout_count=dropout_count,
         )
     except Exception:
         print("[FlowWatch] ERROR loading cache:", file=sys.stderr)
