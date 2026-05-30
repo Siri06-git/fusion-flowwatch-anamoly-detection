@@ -108,6 +108,64 @@
     {% endif %}
 
     {% if student_id and not error_msg %}
+        <!-- Profile Details Summary (Phase 53) -->
+        {% if user_mode == 'institution' and history %}
+            {% set latest = history[-1] %}
+            <div class="grid-card inst-glow inst-border" style="border-color: rgba(99,102,241,0.3) !important; padding: 1.5rem 2rem; margin-bottom: 1.5rem;">
+                <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: #fff; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🎓</span> Student Profile Summary (Week {{ latest.week_number }})
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <!-- Student ID & Year -->
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Student ID</span>
+                        <span id="profile-summary-student-id" style="font-size: 1.15rem; color: #fff; font-weight: 600;">{{ student_id }}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Year</span>
+                        <span id="profile-summary-year" style="font-size: 1.15rem; color: #fff; font-weight: 600;">Year {{ student_meta.year if student_meta and student_meta.year else 'N/A' }}</span>
+                    </div>
+                    
+                    <!-- Branch & Course -->
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Branch</span>
+                        <span id="profile-summary-branch" style="font-size: 1.15rem; color: #fff; font-weight: 600;">{{ student_meta.branch if student_meta and student_meta.branch else 'N/A' }}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Course</span>
+                        <span id="profile-summary-course" style="font-size: 1.15rem; color: #fff; font-weight: 600;">{{ student_meta.course if student_meta and student_meta.course else 'N/A' }}</span>
+                    </div>
+                    
+                    <!-- Risk Score & Tier -->
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Risk Score</span>
+                        <span id="profile-summary-risk-score" style="font-size: 1.15rem; color: #fff; font-weight: 600;">
+                            <span style="color: {% if latest.risk_tier == 'High' %}var(--color-error){% elif latest.risk_tier == 'Medium' %}var(--color-warning){% else %}var(--color-success){% endif %};">
+                                {{ latest.risk_score }} / 100
+                            </span>
+                        </span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Risk Tier</span>
+                        <div id="profile-summary-risk-tier">
+                            <span class="risk-pill {{ latest.risk_tier | lower }}">{{ latest.risk_tier }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quiz Score & Engagement -->
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Quiz Score</span>
+                        <span id="profile-summary-quiz-score" style="font-size: 1.15rem; color: #fff; font-weight: 600;">{{ "%.2f"|format(latest.avg_quiz_score) }}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Composite Engagement</span>
+                        <span id="profile-summary-engagement" style="font-size: 1.15rem; color: #fff; font-weight: 600;">{{ "%.2f"|format(latest.composite_engagement) }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <!-- Student Detailed Cockpit -->
         <div class="cockpit-grid" style="grid-template-columns: 1fr; gap: 2rem;">
             
