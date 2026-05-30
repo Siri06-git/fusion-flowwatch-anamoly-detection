@@ -207,8 +207,24 @@ def institution_dashboard():
     branch_val = branch_param if branch_param else None
     course_val = course_param if course_param else None
     
+    session_db = get_db()
+    unique_years = [r[0] for r in session_db.query(Student.year).distinct().all() if r[0] is not None]
+    unique_branches = [r[0] for r in session_db.query(Student.branch).distinct().all() if r[0]]
+    unique_courses = [r[0] for r in session_db.query(Student.course).distinct().all() if r[0]]
+    
+    unique_years.sort()
+    unique_branches.sort()
+    unique_courses.sort()
+
     metrics = _load_cache_metrics(year=year_val, branch=branch_val, course=course_val)
-    return render_template('institution_dashboard.html', **metrics)
+    return render_template('institution_dashboard.html',
+                           unique_years=unique_years,
+                           unique_branches=unique_branches,
+                           unique_courses=unique_courses,
+                           selected_year=year_val,
+                           selected_branch=branch_val,
+                           selected_course=course_val,
+                           **metrics)
 
 @app.route('/dashboard')
 @login_required
