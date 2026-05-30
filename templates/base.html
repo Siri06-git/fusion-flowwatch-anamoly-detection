@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FlowWatch Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-text">Flow<span class="logo-accent">Watch</span></span>
+        </div>
+        
+        {% if current_user %}
+        <div class="nav-links">
+            <a href="{{ url_for('upload') }}" class="nav-link-item {% if request.endpoint == 'upload' %}active{% endif %}">
+                <span class="nav-icon">📤</span> Ingest CSV
+            </a>
+            {% if user_mode == 'institution' %}
+            <a href="{{ url_for('institution_dashboard') }}"
+               class="nav-link-item {% if request.endpoint == 'institution_dashboard' %}active{% endif %}">
+                <span class="nav-icon">🏛️</span> Dashboard
+            </a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}"
+               class="nav-link-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+            {% endif %}
+            <a href="{{ url_for('analytics') }}" class="nav-link-item {% if request.endpoint == 'analytics' %}active{% endif %}">
+                <span class="nav-icon">📈</span> Analytics
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-link-item {% if request.endpoint == 'profile' %}active{% endif %}">
+                <span class="nav-icon">👤</span> Student Search
+            </a>
+        </div>
+        
+        <div class="nav-profile">
+            <div class="profile-info">
+                {% if user_mode %}
+                    <span class="profile-role" style="
+                        color: {% if user_mode == 'institution' %}var(--color-primary){% else %}var(--color-secondary){% endif %};">
+                        {{ '🏛️' if user_mode == 'institution' else '🏭' }} {{ user_mode | capitalize }}
+                    </span>
+                {% else %}
+                    <span class="profile-role">Advisor</span>
+                {% endif %}
+                <span class="profile-name">{{ current_user }}</span>
+            </div>
+            <div class="profile-avatar">
+                {{ current_user[0].upper() if current_user else 'A' }}
+            </div>
+            <a href="{{ url_for('choose_mode') }}" class="logout-btn"
+               title="Switch Mode" style="margin-right:0.25rem;">
+                <span class="logout-icon">🔄</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="logout-btn" title="Sign Out">
+                <span class="logout-icon">🚪</span>
+            </a>
+        </div>
+        {% else %}
+        <div class="nav-links">
+            <a href="{{ url_for('home', tab='login') }}" class="nav-link-item {% if active_tab == 'login' %}active{% endif %}">Sign In</a>
+            <a href="{{ url_for('home', tab='register') }}" class="nav-link-item {% if active_tab == 'register' %}active{% endif %}">Register</a>
+        </div>
+        {% endif %}
+    </nav>
+    
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% block extra_js %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

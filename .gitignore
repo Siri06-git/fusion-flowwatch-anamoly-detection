@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.db
+flowwatch.db
+uploads/*
+!uploads/.gitkeep
+.system_generated/
+audit_industry.py
+verify_institution_schema.py
+*.log
+venv/
+.venv/
+.idea/
+.vscode/

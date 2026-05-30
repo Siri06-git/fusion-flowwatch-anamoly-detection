@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch Portal – Choose Your Mode{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Mode selection page overrides ───────────────────────────────── */
+    .mode-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        gap: 2.5rem;
+        padding: 2rem 1.5rem;
+        text-align: center;
+    }
+
+    .mode-header h1 {
+        font-family: var(--font-heading);
+        font-size: 2.6rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, #ffffff 40%, #818cf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.75rem;
+    }
+
+    .mode-header p {
+        color: var(--text-muted);
+        font-size: 1.05rem;
+        max-width: 480px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* ── Card grid ────────────────────────────────────────────────────── */
+    .mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.75rem;
+        width: 100%;
+        max-width: 680px;
+    }
+
+    @media (max-width: 600px) {
+        .mode-grid { grid-template-columns: 1fr; }
+    }
+
+    .mode-card {
+        position: relative;
+        background: var(--bg-surface);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 2px solid var(--border-glass);
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    /* Glow layer hidden by default */
+    .mode-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 22px;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+
+    .mode-card.institution::before {
+        background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.18) 0%, transparent 70%);
+    }
+
+    .mode-card.industry::before {
+        background: radial-gradient(circle at 50% 0%, rgba(168,85,247,0.18) 0%, transparent 70%);
+    }
+
+    .mode-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
+
+    .mode-card:hover::before { opacity: 1; }
+
+    .mode-card.institution:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 16px 48px rgba(99,102,241,0.2);
+    }
+
+    .mode-card.industry:hover {
+        border-color: var(--color-secondary);
+        box-shadow: 0 16px 48px rgba(168,85,247,0.2);
+    }
+
+    /* Selected state (radio checked) */
+    .mode-card.selected.institution {
+        border-color: var(--color-primary);
+        background: rgba(99,102,241,0.07);
+        box-shadow: 0 0 32px rgba(99,102,241,0.25);
+        transform: translateY(-4px);
+    }
+
+    .mode-card.selected.industry {
+        border-color: var(--color-secondary);
+        background: rgba(168,85,247,0.07);
+        box-shadow: 0 0 32px rgba(168,85,247,0.25);
+        transform: translateY(-4px);
+    }
+
+    /* Hide real radio buttons */
+    .mode-card input[type="radio"] { display: none; }
+
+    .mode-icon {
+        font-size: 3.5rem;
+        filter: drop-shadow(0 0 12px rgba(255,255,255,0.15));
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    .mode-card:hover .mode-icon {
+        transform: scale(1.15);
+    }
+
+    .mode-card.institution:hover .mode-icon {
+        filter: drop-shadow(0 0 14px var(--color-primary));
+    }
+
+    .mode-card.industry:hover .mode-icon {
+        filter: drop-shadow(0 0 14px var(--color-secondary));
+    }
+
+    .mode-title {
+        font-family: var(--font-heading);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.01em;
+    }
+
+    .mode-desc {
+        font-size: 0.88rem;
+        color: var(--text-muted);
+        line-height: 1.55;
+        text-align: center;
+        max-width: 220px;
+    }
+
+    .mode-tag {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+    }
+
+    .mode-card.institution .mode-tag {
+        color: #818cf8;
+        border-color: rgba(99,102,241,0.3);
+        background: rgba(99,102,241,0.08);
+    }
+
+    .mode-card.industry .mode-tag {
+        color: #c084fc;
+        border-color: rgba(168,85,247,0.3);
+        background: rgba(168,85,247,0.08);
+    }
+
+    /* Checkmark badge */
+    .mode-check {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        color: #fff;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .mode-card.selected .mode-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .mode-card.industry.selected .mode-check {
+        background: var(--color-secondary);
+    }
+
+    /* ── Submit button ────────────────────────────────────────────────── */
+    .mode-submit-btn {
+        width: 100%;
+        max-width: 360px;
+        padding: 0.95rem;
+        border: none;
+        border-radius: 14px;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+        transition: var(--transition-smooth);
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    .mode-submit-btn.ready {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .mode-submit-btn.ready:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(99,102,241,0.4);
+    }
+
+    .mode-submit-btn.ready:active { transform: translateY(0); }
+
+    /* ── Decorative floating blobs ────────────────────────────────────── */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        z-index: -1;
+        animation: floatBlob 8s ease-in-out infinite alternate;
+    }
+
+    .blob-1 {
+        width: 420px; height: 420px;
+        background: rgba(99,102,241,0.08);
+        top: -100px; left: -120px;
+    }
+
+    .blob-2 {
+        width: 360px; height: 360px;
+        background: rgba(168,85,247,0.07);
+        bottom: -80px; right: -100px;
+        animation-delay: -4s;
+    }
+
+    @keyframes floatBlob {
+        from { transform: translate(0, 0) scale(1); }
+        to   { transform: translate(30px, 20px) scale(1.05); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Decorative background blobs -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="mode-page">
+
+    <!-- Header -->
+    <div class="mode-header">
+        <h1>Choose Your Context</h1>
+        <p>
+            FlowWatch adapts its dropout-risk analysis to your environment.
+            Select the mode that best describes your organisation.
+        </p>
+    </div>
+
+    <!-- Mode Cards (wrapped in form) -->
+    <form action="{{ url_for('set_mode') }}" method="POST"
+          id="mode-form" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:2rem;">
+
+        <div class="mode-grid">
+
+            <!-- Institution Card -->
+            <label class="mode-card institution" id="card-institution" for="mode-institution">
+                <div class="mode-check">✓</div>
+                <input type="radio" name="mode" id="mode-institution" value="institution">
+                <span class="mode-icon">🏛️</span>
+                <span class="mode-title">Institution</span>
+                <span class="mode-desc">
+                    Universities, colleges, and schools tracking student
+                    academic engagement and dropout risk.
+                </span>
+                <span class="mode-tag">Academic</span>
+            </label>
+
+            <!-- Industry Card -->
+            <label class="mode-card industry" id="card-industry" for="mode-industry">
+                <div class="mode-check">✓</div>
+                <input type="radio" name="mode" id="mode-industry" value="industry">
+                <span class="mode-icon">🏭</span>
+                <span class="mode-title">Industry</span>
+                <span class="mode-desc">
+                    Corporations and training providers monitoring workforce
+                    learning programmes and attrition signals.
+                </span>
+                <span class="mode-tag">Corporate</span>
+            </label>
+
+        </div>
+
+        <button type="submit" class="mode-submit-btn" id="mode-submit-btn">
+            Continue to Dashboard →
+        </button>
+
+    </form>
+
+    <!-- Footer hint -->
+    <p style="color:var(--text-muted);font-size:0.82rem;margin-top:-1rem;">
+        You can switch mode at any time from your profile settings.
+    </p>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const radios    = document.querySelectorAll('input[name="mode"]');
+    const cards     = document.querySelectorAll('.mode-card');
+    const submitBtn = document.getElementById('mode-submit-btn');
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            // Remove selected state from all cards
+            cards.forEach(c => c.classList.remove('selected'));
+
+            // Add selected state to the parent label
+            const selected = document.querySelector(`label[for="${radio.id}"]`);
+            if (selected) selected.classList.add('selected');
+
+            // Enable submit
+            submitBtn.classList.add('ready');
+            submitBtn.textContent = `Continue as ${radio.value} →`;
+        });
+    });
+
+    // Allow clicking anywhere on the card to select it
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

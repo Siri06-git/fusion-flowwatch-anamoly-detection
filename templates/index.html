@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch Portal - Ingest{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 600px; text-align: center; margin: 2rem auto;">
+    <div class="auth-header" style="margin-bottom: 2rem;">
+        <h1 class="page-title">Ingest Student Data</h1>
+        <p class="page-subtitle" style="margin-top: 0.5rem; color: var(--text-muted);">Upload a CSV file containing the 29 required student behavioral metrics.</p>
+    </div>
+    
+    <form action="{{ url_for('upload_csv') }}" method="POST" enctype="multipart/form-data" id="main-upload-form">
+        <!-- Drag & Drop Zone -->
+        <div id="drop-zone" class="form-group" style="border: 2px dashed var(--border-glass); padding: 4rem 2rem; border-radius: 20px; cursor: pointer; transition: var(--transition-smooth); background: rgba(255,255,255,0.01); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--border-glass)'">
+            <span style="font-size: 3.5rem; display: block;">📁</span>
+            <span id="drop-zone-text" style="font-weight: 500; font-family: var(--font-heading); font-size: 1.1rem; color: #fff;">
+                Drag and drop your CSV file here or click to browse
+            </span>
+            <span id="selected-file-info" style="font-size: 0.95rem; color: var(--color-success); font-weight: 600; display: none;"></span>
+            <input type="file" name="file" id="csv-file-input" style="display: none;" accept=".csv">
+        </div>
+        
+        <button type="submit" id="process-btn" class="btn btn-primary" style="margin-top: 1.5rem; width: 100%; display: none;">
+            Process & Run AI Engine
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('csv-file-input');
+    const dropZoneText = document.getElementById('drop-zone-text');
+    const fileInfo = document.getElementById('selected-file-info');
+    const processBtn = document.getElementById('process-btn');
+
+    // Click to open file dialog
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Update styling on hover / drag states
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--color-primary)';
+        dropZone.style.background = 'rgba(99, 102, 241, 0.04)';
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.borderColor = 'var(--border-glass)';
+            dropZone.style.background = 'rgba(255, 255, 255, 0.01)';
+        });
+    });
+
+    // Drop file handler
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelection();
+        }
+    });
+
+    // Change file handler
+    fileInput.addEventListener('change', () => {
+        handleFileSelection();
+    });
+
+    function handleFileSelection() {
+        if (fileInput.files && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            dropZoneText.style.display = 'none';
+            fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            fileInfo.style.display = 'block';
+            dropZone.style.borderColor = 'var(--color-success)';
+            dropZone.style.background = 'rgba(16, 185, 129, 0.02)';
+            processBtn.style.display = 'block';
+        }
+    }
+});
+</script>
+{% endblock %}

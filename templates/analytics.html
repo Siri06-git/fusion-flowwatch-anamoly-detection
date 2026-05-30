@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch Portal – Analytics Cockpit{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+
+    <!-- ── Header ──────────────────────────────────────────────────── -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="page-title">Analytics Cockpit</h1>
+            <p class="page-subtitle">
+                Upload behavioral CSV records to audit cohort engagement levels and dropout alerts.
+                {% if latest_week > 0 %}
+                    &nbsp;|&nbsp; <strong style="color:var(--color-primary);">Showing Week {{ latest_week }}</strong>
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Upload action -->
+        <div class="quick-upload-card">
+            <form action="{{ url_for('upload_csv') }}" method="POST"
+                  enctype="multipart/form-data" id="csv-upload-form" class="upload-inline-form">
+                <label for="csv-file" class="upload-label">
+                    <span class="upload-icon">📤</span>
+                    <span class="upload-text">Select CSV File</span>
+                </label>
+                <input type="file" id="csv-file" name="file" accept=".csv"
+                       class="file-hidden-input" onchange="handleFileSelected(this)">
+                <span id="file-name-display" class="file-name-label">No file selected</span>
+                <button type="submit" class="btn btn-primary btn-inline"
+                        disabled id="upload-submit-btn">Ingest &amp; Run AI</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── KPI Row ─────────────────────────────────────────────────── -->
+    <div class="kpi-row">
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Total Students</span>
+                <h3 class="kpi-value" id="kpi-cohort-size">{{ cohort_size }}</h3>
+                <span class="kpi-trend positive">Unique IDs detected</span>
+            </div>
+            <div class="kpi-icon-wrapper">👥</div>
+        </div>
+
+        <div class="kpi-card flagged">
+            <div class="kpi-info">
+                <span class="kpi-title">High Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-error);">{{ high_risk_count }}</h3>
+                <span class="kpi-trend negative">↑ Risk score ≥ 70</span>
+            </div>
+            <div class="kpi-icon-wrapper">🚨</div>
+        </div>
+
+        <div class="kpi-card warning">
+            <div class="kpi-info">
+                <span class="kpi-title">Medium Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-warning);">{{ medium_risk_count }}</h3>
+                <span class="kpi-trend negative">Risk score 45–69</span>
+            </div>
+            <div class="kpi-icon-wrapper">⚠️</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Low Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-success);">{{ low_risk_count }}</h3>
+                <span class="kpi-trend positive">Risk score &lt; 45</span>
+            </div>
+            <div class="kpi-icon-wrapper">✅</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Anomalies (IF)</span>
+                <h3 class="kpi-value" style="color:var(--color-secondary);">{{ anomaly_count }}</h3>
+                <span class="kpi-trend negative">Isolation Forest flags</span>
+            </div>
+            <div class="kpi-icon-wrapper">🔬</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Avg Engagement</span>
+                <h3 class="kpi-value">{{ "%.2f"|format(avg_engagement) }}</h3>
+                <span class="kpi-trend positive">Latest week cohort avg</span>
+            </div>
+            <div class="kpi-icon-wrapper">📊</div>
+        </div>
+
+    </div><!-- /kpi-row -->
+
+    <!-- ── Cockpit Grid ────────────────────────────────────────────── -->
+    <div class="cockpit-grid">
+
+        <!-- Student registry table -->
+        <div class="grid-card table-card">
+            <div class="card-header">
+                <h3>Student Risk Registry
+                    {% if latest_week > 0 %}
+                        <span style="font-size:0.85rem;color:var(--text-muted);font-weight:400;">
+                            (Week {{ latest_week }})
+                        </span>
+                    {% endif %}
+                </h3>
+                <div class="card-actions">
+                    <input type="text" placeholder="Search student_id…"
+                           class="search-input" id="student-search">
+                </div>
+            </div>
+
+            <div class="table-scroll-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Week</th>
+                            <th>Engagement</th>
+                            <th>Quiz Decline</th>
+                            <th>Last Login</th>
+                            <th>Risk Score</th>
+                            <th>Risk Tier</th>
+                            <th>Anomaly</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        {% for s in students %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('profile', student_id=s.student_id) }}"
+                                   style="text-decoration:none;">
+                                    <span class="student-id-badge">{{ s.student_id }}</span>
+                                </a>
+                            </td>
+                            <td>Week {{ s.week_number }}</td>
+                            <td>{{ "%.2f"|format(s.composite_engagement | float) }}</td>
+                            <td>{{ s.weeks_of_quiz_decline | int }} wks</td>
+                            <td>{{ s.days_since_last_login | int }} days ago</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:0.4rem;">
+                                    <div style="flex:1;min-width:40px;background:rgba(255,255,255,0.05);
+                                                height:6px;border-radius:3px;overflow:hidden;">
+                                        <div style="width:{{ [s.risk_score|float, 100]|min }}%;
+                                                    background:{% if s.risk_tier == 'High' %}var(--color-error)
+                                                               {% elif s.risk_tier == 'Medium' %}var(--color-warning)
+                                                               {% else %}var(--color-success){% endif %};
+                                                    height:100%;border-radius:3px;"></div>
+                                    </div>
+                                    <span style="font-size:0.8rem;">{{ "%.0f"|format(s.risk_score|float) }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="risk-pill {{ s.risk_tier | lower }}">{{ s.risk_tier }}</span>
+                            </td>
+                            <td>
+                                {% if s.is_anomaly %}
+                                    <span style="color:var(--color-secondary);font-weight:600;">⚠ Yes</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align:center;color:var(--text-muted);padding:3rem 0;">
+                                No data yet. Upload a CSV above to populate the dashboard.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /table-card -->
+
+        <!-- Doughnut chart -->
+        <div class="grid-card chart-card">
+            <div class="card-header">
+                <h3>Cohort Risk Distribution</h3>
+            </div>
+            <div class="chart-display-area"
+                 id="risk-doughnut-container"
+                 data-high="{{ high_risk_count }}"
+                 data-medium="{{ medium_risk_count }}"
+                 data-low="{{ low_risk_count }}"
+                 style="position:relative;height:260px;width:100%;">
+                <canvas id="riskDoughnutChart"></canvas>
+            </div>
+        </div>
+
+    </div><!-- /cockpit-grid -->
+
+</div><!-- /analytics-container -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    function handleFileSelected(input) {
+        const fileDisplay  = document.getElementById('file-name-display');
+        const submitBtn    = document.getElementById('upload-submit-btn');
+        if (input.files && input.files.length > 0) {
+            fileDisplay.textContent = input.files[0].name;
+            fileDisplay.classList.add('selected');
+            submitBtn.removeAttribute('disabled');
+        } else {
+            fileDisplay.textContent = 'No file selected';
+            fileDisplay.classList.remove('selected');
+            submitBtn.setAttribute('disabled', 'true');
+        }
+    }
+</script>
+{% endblock %}

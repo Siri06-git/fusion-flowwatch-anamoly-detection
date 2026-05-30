@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch Portal – Dashboard{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+
+    <!-- ── Header ──────────────────────────────────────────────────────── -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="page-title">Advisor Dashboard</h1>
+            <p class="page-subtitle">
+                Live cohort overview — dropout forecasting, risk breakdown &amp; high-priority student alerts.
+                {% if latest_week > 0 %}
+                    &nbsp;|&nbsp; <strong style="color:var(--color-primary);">Latest Week: {{ latest_week }}</strong>
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('analytics') }}" class="btn btn-primary btn-inline"
+           style="text-decoration:none; padding:0.6rem 1.4rem; width:auto;">
+            📈 Full Analytics
+        </a>
+    </div>
+
+    <!-- ── KPI Row ─────────────────────────────────────────────────────── -->
+    <div class="kpi-row">
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Total Students</span>
+                <h3 class="kpi-value">{{ cohort_size }}</h3>
+                <span class="kpi-trend positive">Enrolled in cohort</span>
+            </div>
+            <div class="kpi-icon-wrapper">👥</div>
+        </div>
+
+        <div class="kpi-card flagged">
+            <div class="kpi-info">
+                <span class="kpi-title">High Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-error);">{{ high_risk_count }}</h3>
+                <span class="kpi-trend negative">↑ Needs immediate attention</span>
+            </div>
+            <div class="kpi-icon-wrapper">🚨</div>
+        </div>
+
+        <div class="kpi-card warning">
+            <div class="kpi-info">
+                <span class="kpi-title">Medium Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-warning);">{{ medium_risk_count }}</h3>
+                <span class="kpi-trend negative">Monitor closely</span>
+            </div>
+            <div class="kpi-icon-wrapper">⚠️</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Low Risk</span>
+                <h3 class="kpi-value" style="color:var(--color-success);">{{ low_risk_count }}</h3>
+                <span class="kpi-trend positive">On track</span>
+            </div>
+            <div class="kpi-icon-wrapper">✅</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Anomalies (IF)</span>
+                <h3 class="kpi-value" style="color:var(--color-secondary);">{{ anomaly_count }}</h3>
+                <span class="kpi-trend negative">Isolation Forest flags</span>
+            </div>
+            <div class="kpi-icon-wrapper">🔬</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <span class="kpi-title">Avg Engagement</span>
+                <h3 class="kpi-value">{{ "%.2f"|format(avg_engagement) }}</h3>
+                <span class="kpi-trend positive">Week {{ latest_week }} cohort avg</span>
+            </div>
+            <div class="kpi-icon-wrapper">📊</div>
+        </div>
+
+    </div><!-- /kpi-row -->
+
+    <!-- ── Main Grid ───────────────────────────────────────────────────── -->
+    <div class="cockpit-grid">
+
+        <!-- High-Risk Alert Panel -->
+        <div class="grid-card table-card">
+            <div class="card-header">
+                <h3>🚨 High-Risk Student Alerts
+                    <span style="font-size:0.8rem;color:var(--text-muted);font-weight:400;margin-left:0.5rem;">
+                        (Week {{ latest_week }})
+                    </span>
+                </h3>
+                <a href="{{ url_for('analytics') }}"
+                   style="font-size:0.8rem;color:var(--color-primary);text-decoration:none;">
+                    View all →
+                </a>
+            </div>
+
+            <div class="table-scroll-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Risk Score</th>
+                            <th>Tier</th>
+                            <th>Engagement</th>
+                            <th>Quiz Decline</th>
+                            <th>Days Offline</th>
+                            <th>Anomaly</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set high_students = students | selectattr('risk_tier', 'equalto', 'High') | list %}
+                        {% for s in high_students[:10] %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('profile', student_id=s.student_id) }}"
+                                   style="text-decoration:none;">
+                                    <span class="student-id-badge">{{ s.student_id }}</span>
+                                </a>
+                            </td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:0.4rem;">
+                                    <div style="flex:1;min-width:50px;background:rgba(239,68,68,0.1);
+                                                height:6px;border-radius:3px;overflow:hidden;">
+                                        <div style="width:{{ [s.risk_score|float, 100]|min }}%;
+                                                    background:var(--color-error);
+                                                    height:100%;border-radius:3px;"></div>
+                                    </div>
+                                    <span style="font-weight:700;color:var(--color-error);font-size:0.9rem;">
+                                        {{ "%.0f"|format(s.risk_score|float) }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td><span class="risk-pill high">High</span></td>
+                            <td>{{ "%.2f"|format(s.composite_engagement|float) }}</td>
+                            <td>{{ s.weeks_of_quiz_decline|int }} wks</td>
+                            <td>{{ s.days_since_last_login|int }}d</td>
+                            <td>
+                                {% if s.is_anomaly %}
+                                    <span style="color:var(--color-secondary);font-weight:600;">⚠ Yes</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align:center;color:var(--text-muted);padding:2.5rem 0;">
+                                {% if cohort_size == 0 %}
+                                    No data yet — upload a CSV to populate the dashboard.
+                                {% else %}
+                                    No high-risk students detected this week. 🎉
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /table-card -->
+
+        <!-- Risk Doughnut + Summary panel -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+            <!-- Doughnut -->
+            <div class="grid-card chart-card">
+                <div class="card-header">
+                    <h3>Risk Distribution</h3>
+                </div>
+                <div class="chart-display-area"
+                     id="risk-doughnut-container"
+                     data-high="{{ high_risk_count }}"
+                     data-medium="{{ medium_risk_count }}"
+                     data-low="{{ low_risk_count }}"
+                     style="position:relative;height:220px;width:100%;">
+                    <canvas id="riskDoughnutChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick stat tiles -->
+            <div class="grid-card" style="padding:1.5rem;">
+                <div class="card-header" style="margin-bottom:1rem;">
+                    <h3>Cohort Breakdown</h3>
+                </div>
+                {% set total = high_risk_count + medium_risk_count + low_risk_count %}
+                {% if total > 0 %}
+                    {% for label, count, color in [
+                        ('High Risk',   high_risk_count,   'var(--color-error)'),
+                        ('Medium Risk', medium_risk_count, 'var(--color-warning)'),
+                        ('Low Risk',    low_risk_count,    'var(--color-success)')
+                    ] %}
+                    <div style="margin-bottom:1rem;">
+                        <div style="display:flex;justify-content:space-between;
+                                    margin-bottom:0.35rem;font-size:0.85rem;">
+                            <span style="color:{{ color }};font-weight:600;">{{ label }}</span>
+                            <span style="color:var(--text-muted);">
+                                {{ count }} / {{ total }}
+                                ({{ "%.0f"|format((count / total * 100) if total > 0 else 0) }}%)
+                            </span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05);border-radius:6px;
+                                    height:8px;overflow:hidden;">
+                            <div style="width:{{ "%.0f"|format((count / total * 100) if total > 0 else 0) }}%;
+                                        background:{{ color }};height:100%;border-radius:6px;
+                                        transition:width 0.6s ease;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:var(--text-muted);font-size:0.9rem;text-align:center;padding:1rem 0;">
+                        Upload a CSV to see the breakdown.
+                    </p>
+                {% endif %}
+            </div>
+
+        </div><!-- /right column -->
+
+    </div><!-- /cockpit-grid -->
+
+    <!-- ── Quick Actions ───────────────────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.2rem;">
+
+        <a href="{{ url_for('upload') }}" style="text-decoration:none;">
+            <div class="kpi-card" style="cursor:pointer;gap:1rem;flex-direction:column;
+                                         align-items:flex-start;padding:1.5rem;">
+                <span style="font-size:2rem;">📤</span>
+                <div>
+                    <div style="font-family:var(--font-heading);font-weight:600;
+                                color:#fff;margin-bottom:0.25rem;">Upload New CSV</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Ingest fresh behavioral data
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('analytics') }}" style="text-decoration:none;">
+            <div class="kpi-card" style="cursor:pointer;gap:1rem;flex-direction:column;
+                                         align-items:flex-start;padding:1.5rem;">
+                <span style="font-size:2rem;">📈</span>
+                <div>
+                    <div style="font-family:var(--font-heading);font-weight:600;
+                                color:#fff;margin-bottom:0.25rem;">Analytics Cockpit</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Full registry &amp; doughnut charts
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('profile') }}" style="text-decoration:none;">
+            <div class="kpi-card" style="cursor:pointer;gap:1rem;flex-direction:column;
+                                         align-items:flex-start;padding:1.5rem;">
+                <span style="font-size:2rem;">👤</span>
+                <div>
+                    <div style="font-family:var(--font-heading);font-weight:600;
+                                color:#fff;margin-bottom:0.25rem;">Student Search</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Trace individual trend lines
+                    </div>
+                </div>
+            </div>
+        </a>
+
+    </div><!-- /quick-actions -->
+
+</div><!-- /analytics-container -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

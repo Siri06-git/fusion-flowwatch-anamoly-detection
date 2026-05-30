@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch – Institution Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Institution theme accent overrides */
+    .inst-accent   { color: var(--color-primary); }
+    .inst-glow     { box-shadow: 0 0 24px rgba(99,102,241,0.18); }
+    .inst-border   { border-color: rgba(99,102,241,0.35) !important; }
+
+    /* Hero banner */
+    .inst-hero {
+        background: linear-gradient(135deg,
+            rgba(99,102,241,0.12) 0%,
+            rgba(168,85,247,0.08) 100%);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 24px;
+        padding: 2rem 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .inst-hero::before {
+        content: '🏛️';
+        position: absolute;
+        right: 2rem;
+        font-size: 8rem;
+        opacity: 0.06;
+        pointer-events: none;
+        line-height: 1;
+    }
+
+    .inst-hero-title {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.4rem;
+    }
+
+    .inst-hero-sub {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        max-width: 520px;
+    }
+
+    /* Stat strip */
+    .stat-strip {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .stat-value {
+        font-family: var(--font-heading);
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .stat-divider {
+        width: 1px;
+        background: rgba(255,255,255,0.08);
+        align-self: stretch;
+    }
+
+    /* Alert count badge */
+    .alert-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.25);
+        color: #fca5a5;
+        border-radius: 999px;
+        padding: 0.4rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        animation: alertPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes alertPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+        50%       { box-shadow: 0 0 0 6px rgba(239,68,68,0.08); }
+    }
+
+    /* Academic metric cards */
+    .acad-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .acad-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-glass);
+        border-radius: 18px;
+        padding: 1.4rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        transition: var(--transition-smooth);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .acad-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(99,102,241,0.3);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    }
+
+    .acad-card-icon {
+        font-size: 1.6rem;
+        line-height: 1;
+    }
+
+    .acad-card-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+    }
+
+    .acad-card-value {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .acad-card-note {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    /* Dropout risk table */
+    .at-risk-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+
+    .section-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-primary);
+        background: rgba(99,102,241,0.08);
+        border: 1px solid rgba(99,102,241,0.2);
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+    }
+
+    /* Engagement bar */
+    .eng-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .eng-bar {
+        flex: 1;
+        height: 6px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 3px;
+        overflow: hidden;
+        min-width: 50px;
+    }
+
+    .eng-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    /* Quick action cards */
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.2rem;
+    }
+
+    .quick-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-glass);
+        border-radius: 18px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--transition-smooth);
+    }
+
+    .quick-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(99,102,241,0.35);
+        box-shadow: 0 8px 28px rgba(99,102,241,0.12);
+    }
+
+    .quick-card-icon { font-size: 1.8rem; }
+
+    .quick-card-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.95rem;
+    }
+
+    .quick-card-desc {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+
+    <!-- ── Hero Banner ─────────────────────────────────────────────── -->
+    <div class="inst-hero">
+        <div>
+            <div style="margin-bottom:0.75rem;">
+                {% if high_risk_count > 0 %}
+                <span class="alert-badge">
+                    🚨 {{ high_risk_count }} student{{ 's' if high_risk_count != 1 }} need immediate intervention
+                </span>
+                {% else %}
+                <span style="font-size:0.82rem;color:var(--color-success);
+                             background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);
+                             padding:0.3rem 0.9rem;border-radius:999px;font-weight:600;">
+                    ✅ No critical dropout alerts this week
+                </span>
+                {% endif %}
+            </div>
+            <h1 class="inst-hero-title">Institution Dashboard</h1>
+            <p class="inst-hero-sub">
+                Academic cohort overview — track student engagement, quiz performance,
+                and dropout risk across
+                {% if latest_week > 0 %}Week {{ latest_week }}{% else %}all available weeks{% endif %}.
+            </p>
+
+            <div class="stat-strip" style="margin-top:1.25rem;">
+                <div class="stat-item">
+                    <span class="stat-value">{{ cohort_size }}</span>
+                    <span class="stat-label">Enrolled Students</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:var(--color-error);">{{ high_risk_count }}</span>
+                    <span class="stat-label">At-Risk</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:var(--color-success);">{{ low_risk_count }}</span>
+                    <span class="stat-label">On Track</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:var(--color-secondary);">{{ anomaly_count }}</span>
+                    <span class="stat-label">Anomalies</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Academic KPI Cards ──────────────────────────────────────── -->
+    <div class="acad-grid">
+
+        <div class="acad-card">
+            <span class="acad-card-icon">👥</span>
+            <span class="acad-card-label">Total Enrolment</span>
+            <span class="acad-card-value">{{ cohort_size }}</span>
+            <span class="acad-card-note">Unique student IDs ingested</span>
+        </div>
+
+        <div class="acad-card" style="border-color:rgba(239,68,68,0.2);">
+            <span class="acad-card-icon">⛔</span>
+            <span class="acad-card-label">Dropout Risk — High</span>
+            <span class="acad-card-value" style="color:var(--color-error);">{{ high_risk_count }}</span>
+            <span class="acad-card-note">Risk score ≥ 70 — intervene now</span>
+        </div>
+
+        <div class="acad-card" style="border-color:rgba(245,158,11,0.2);">
+            <span class="acad-card-icon">⚠️</span>
+            <span class="acad-card-label">Dropout Risk — Medium</span>
+            <span class="acad-card-value" style="color:var(--color-warning);">{{ medium_risk_count }}</span>
+            <span class="acad-card-note">Risk score 45–69 — monitor weekly</span>
+        </div>
+
+        <div class="acad-card" style="border-color:rgba(16,185,129,0.2);">
+            <span class="acad-card-icon">✅</span>
+            <span class="acad-card-label">Academically Stable</span>
+            <span class="acad-card-value" style="color:var(--color-success);">{{ low_risk_count }}</span>
+            <span class="acad-card-note">Risk score &lt; 45 — no action needed</span>
+        </div>
+
+        <div class="acad-card" style="border-color:rgba(168,85,247,0.2);">
+            <span class="acad-card-icon">🔬</span>
+            <span class="acad-card-label">Behavioural Anomalies</span>
+            <span class="acad-card-value" style="color:var(--color-secondary);">{{ anomaly_count }}</span>
+            <span class="acad-card-note">Isolation Forest outlier flags</span>
+        </div>
+
+        <div class="acad-card">
+            <span class="acad-card-icon">📊</span>
+            <span class="acad-card-label">Avg Engagement Score</span>
+            <span class="acad-card-value">{{ "%.2f"|format(avg_engagement) }}</span>
+            <span class="acad-card-note">Week {{ latest_week }} cohort composite avg</span>
+        </div>
+
+    </div><!-- /acad-grid -->
+
+    <!-- ── Main Grid ───────────────────────────────────────────────── -->
+    <div class="cockpit-grid">
+
+        <!-- At-risk student table -->
+        <div class="grid-card">
+            <div class="at-risk-header">
+                <div>
+                    <h3 style="font-family:var(--font-heading);font-size:1.15rem;
+                                color:#fff;font-weight:600;margin-bottom:0.25rem;">
+                        Students Requiring Intervention
+                    </h3>
+                    <p style="font-size:0.82rem;color:var(--text-muted);">
+                        High and medium-risk learners — Week {{ latest_week }}
+                    </p>
+                </div>
+                <span class="section-tag">Academic Alerts</span>
+            </div>
+
+            <div class="table-scroll-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Risk Tier</th>
+                            <th>Risk Score</th>
+                            <th>Engagement</th>
+                            <th>Quiz Decline</th>
+                            <th>Days Offline</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set at_risk = students | selectattr('risk_tier', 'in', ['High', 'Medium']) | list %}
+                        {% for s in at_risk | sort(attribute='risk_score', reverse=True) %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('profile', student_id=s.student_id) }}"
+                                   style="text-decoration:none;">
+                                    <span class="student-id-badge">{{ s.student_id }}</span>
+                                </a>
+                                {% if s.year or s.branch or s.course %}
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                    {% if s.year %}<span>Yr {{ s.year }}</span>{% endif %}
+                                    {% if s.branch %}<span>• {{ s.branch }}</span>{% endif %}
+                                    {% if s.course %}<span>• {{ s.course }}</span>{% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="risk-pill {{ s.risk_tier | lower }}">
+                                    {{ s.risk_tier }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="eng-bar-wrap">
+                                    <div class="eng-bar">
+                                        <div class="eng-bar-fill" style="
+                                            width:{{ [s.risk_score|float, 100]|min }}%;
+                                            background:{% if s.risk_tier == 'High' %}var(--color-error)
+                                                       {% else %}var(--color-warning){% endif %};"></div>
+                                    </div>
+                                    <span style="font-size:0.82rem;font-weight:600;
+                                                 color:{% if s.risk_tier == 'High' %}var(--color-error)
+                                                        {% else %}var(--color-warning){% endif %};">
+                                        {{ "%.0f"|format(s.risk_score|float) }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="eng-bar-wrap">
+                                    <div class="eng-bar">
+                                        <div class="eng-bar-fill" style="
+                                            width:{{ [(s.composite_engagement|float * 100), 100]|min }}%;
+                                            background:var(--color-primary);"></div>
+                                    </div>
+                                    <span style="font-size:0.82rem;">
+                                        {{ "%.2f"|format(s.composite_engagement|float) }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="color:{% if s.weeks_of_quiz_decline|int >= 3 %}var(--color-error)
+                                             {% elif s.weeks_of_quiz_decline|int >= 1 %}var(--color-warning)
+                                             {% else %}var(--text-muted){% endif %};">
+                                    {{ s.weeks_of_quiz_decline|int }} wks
+                                </span>
+                            </td>
+                            <td>{{ s.days_since_last_login|int }} days</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align:center;
+                                                   color:var(--text-muted);padding:3rem 0;">
+                                {% if cohort_size == 0 %}
+                                    Upload a CSV to populate student data.
+                                {% else %}
+                                    🎉 No students at high or medium risk this week!
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /table -->
+
+        <!-- Right column: doughnut + breakdown -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+            <!-- Doughnut -->
+            <div class="grid-card inst-glow inst-border">
+                <div class="card-header">
+                    <h3>Dropout Risk Distribution</h3>
+                    <span class="section-tag">Week {{ latest_week }}</span>
+                </div>
+                <div class="chart-display-area"
+                     id="risk-doughnut-container"
+                     data-high="{{ high_risk_count }}"
+                     data-medium="{{ medium_risk_count }}"
+                     data-low="{{ low_risk_count }}"
+                     style="position:relative;height:220px;width:100%;">
+                    <canvas id="riskDoughnutChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Enrolment breakdown bars -->
+            <div class="grid-card" style="padding:1.5rem;">
+                <div class="card-header" style="margin-bottom:1.1rem;">
+                    <h3>Cohort Health Breakdown</h3>
+                </div>
+                {% set total = high_risk_count + medium_risk_count + low_risk_count %}
+                {% if total > 0 %}
+                    {% for label, count, color, icon in [
+                        ('At-Risk (High)',     high_risk_count,   'var(--color-error)',   '⛔'),
+                        ('Monitoring (Medium)',medium_risk_count, 'var(--color-warning)', '⚠️'),
+                        ('On Track (Low)',     low_risk_count,    'var(--color-success)', '✅')
+                    ] %}
+                    <div style="margin-bottom:1.1rem;">
+                        <div style="display:flex;justify-content:space-between;
+                                    margin-bottom:0.4rem;font-size:0.83rem;">
+                            <span style="color:{{ color }};font-weight:600;">
+                                {{ icon }} {{ label }}
+                            </span>
+                            <span style="color:var(--text-muted);">
+                                {{ count }} students
+                                ({{ "%.0f"|format((count / total * 100) if total > 0 else 0) }}%)
+                            </span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05);
+                                    border-radius:6px;height:9px;overflow:hidden;">
+                            <div style="width:{{ "%.0f"|format((count / total * 100) if total > 0 else 0) }}%;
+                                        background:{{ color }};height:100%;border-radius:6px;
+                                        transition:width 0.7s ease;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:var(--text-muted);font-size:0.88rem;text-align:center;padding:1rem 0;">
+                        No data yet — upload a student CSV to view breakdown.
+                    </p>
+                {% endif %}
+            </div>
+
+        </div><!-- /right col -->
+
+    </div><!-- /cockpit-grid -->
+
+    <!-- ── Quick Actions ───────────────────────────────────────────── -->
+    <div class="quick-grid">
+
+        <a href="{{ url_for('upload') }}" class="quick-card">
+            <span class="quick-card-icon">📤</span>
+            <span class="quick-card-title">Upload Student CSV</span>
+            <span class="quick-card-desc">Ingest a new week of behavioural data</span>
+        </a>
+
+        <a href="{{ url_for('analytics') }}" class="quick-card">
+            <span class="quick-card-icon">📈</span>
+            <span class="quick-card-title">Full Analytics Cockpit</span>
+            <span class="quick-card-desc">All students, filters &amp; charts</span>
+        </a>
+
+        <a href="{{ url_for('profile') }}" class="quick-card">
+            <span class="quick-card-icon">🔍</span>
+            <span class="quick-card-title">Student Profile Search</span>
+            <span class="quick-card-desc">Trace individual weekly history &amp; trends</span>
+        </a>
+
+        <a href="{{ url_for('choose_mode') }}" class="quick-card">
+            <span class="quick-card-icon">🔄</span>
+            <span class="quick-card-title">Switch Mode</span>
+            <span class="quick-card-desc">Change to Industry portal view</span>
+        </a>
+
+    </div>
+
+</div><!-- /analytics-container -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

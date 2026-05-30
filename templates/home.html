@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}FlowWatch Portal - Welcome{% endblock %}
+
+{% block content %}
+<div class="home-grid">
+    <!-- Intro Column -->
+    <div class="intro-column">
+        <h1 class="intro-title">Predict Dropout Risks before they happen.</h1>
+        <p class="intro-desc">
+            FlowWatch is an advanced educational forecasting portal. By ingestion of key behavioral indicators, advisors can automatically screen cohorts, trace decline trajectories, and execute timely student support strategies.
+        </p>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <span class="feature-icon">🔍</span>
+                <div class="feature-text">
+                    <h4>Anomaly Score Modeling</h4>
+                    <p>Detect subtle shifts in academic engagement based on 15 core behavioral drivers.</p>
+                </div>
+            </div>
+            
+            <div class="feature-item">
+                <span class="feature-icon">📈</span>
+                <div class="feature-text">
+                    <h4>Trend Timeline Charts</h4>
+                    <p>Observe decline histories in quiz scores, login counts, and submission lags over weeks.</p>
+                </div>
+            </div>
+            
+            <div class="feature-item">
+                <span class="feature-icon">📋</span>
+                <div class="feature-text">
+                    <h4>Advisor Actions & Notes</h4>
+                    <p>Assign follow-up tasks, track flagged cases, and record communication outcomes directly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Auth Column -->
+    <div class="auth-column">
+        <div class="auth-card">
+            <!-- Tabs Header -->
+            <div class="tab-header">
+                <button type="button" class="tab-btn {% if active_tab == 'login' %}active{% endif %}" onclick="switchTab('login')">Sign In</button>
+                <button type="button" class="tab-btn {% if active_tab == 'register' %}active{% endif %}" onclick="switchTab('register')">Create Account</button>
+            </div>
+            
+            <!-- Login Form Pane -->
+            <div id="login-pane" class="tab-pane {% if active_tab == 'login' %}active{% endif %}">
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" name="username" class="form-input" required autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" class="form-input" required autocomplete="current-password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Sign In to Portal</button>
+                </form>
+            </div>
+            
+            <!-- Register Form Pane -->
+            <div id="register-pane" class="tab-pane {% if active_tab == 'register' %}active{% endif %}">
+                <form action="{{ url_for('register') }}" method="POST">
+                    <div class="form-group">
+                        <label for="reg-username">Username</label>
+                        <input type="text" id="reg-username" name="username" class="form-input" required autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" name="password" class="form-input" required autocomplete="new-password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Advisor Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tab) {
+        // Remove active state from all tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        
+        // Add active state to selected tab
+        if (tab === 'login') {
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            document.getElementById('login-pane').classList.add('active');
+        } else {
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            document.getElementById('register-pane').classList.add('active');
+        }
+        
+        // Update URL parameter without reload
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?tab=' + tab;
+        window.history.pushState({path:newUrl}, '', newUrl);
+    }
+</script>
+{% endblock %}
