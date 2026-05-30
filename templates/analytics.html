@@ -2,6 +2,13 @@
 
 {% block title %}FlowWatch Portal – Analytics Cockpit{% endblock %}
 
+{% block extra_css %}
+<style>
+    .inst-glow     { box-shadow: 0 0 24px rgba(99,102,241,0.18); }
+    .inst-border   { border-color: rgba(99,102,241,0.35) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="analytics-container">
 
@@ -33,6 +40,59 @@
             </form>
         </div>
     </div>
+
+    <!-- ── Dynamic Filter Bar (Phase 51) ──────────────────────────────── -->
+    {% if user_mode == 'institution' %}
+    <div class="grid-card inst-glow inst-border" style="padding: 1.25rem 1.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem; border-color: rgba(99,102,241,0.3) !important;">
+        <form method="GET" action="{{ url_for('analytics') }}" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; flex-grow: 1;">
+                <h3 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.4rem; margin: 0;">
+                    <span>🔍</span> Filter Cohort:
+                </h3>
+                
+                <!-- Year Filter -->
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label for="filter-year" style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Year</label>
+                    <select name="year" id="filter-year" class="search-input" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: 8px; width: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; cursor: pointer;" onchange="this.form.submit()">
+                        <option value="">All Years</option>
+                        {% for y in unique_years %}
+                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>Year {{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Branch Filter -->
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label for="filter-branch" style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Branch</label>
+                    <select name="branch" id="filter-branch" class="search-input" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: 8px; width: 150px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; cursor: pointer;" onchange="this.form.submit()">
+                        <option value="">All Branches</option>
+                        {% for b in unique_branches %}
+                        <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Course Filter -->
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label for="filter-course" style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Course</label>
+                    <select name="course" id="filter-course" class="search-input" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: 8px; width: 180px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; cursor: pointer;" onchange="this.form.submit()">
+                        <option value="">All Courses</option>
+                        {% for c in unique_courses %}
+                        <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Clear Filters -->
+            {% if selected_year or selected_branch or selected_course %}
+            <a href="{{ url_for('analytics') }}" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.82rem; border-radius: 8px; text-decoration: none; align-self: flex-end; border: 1px solid var(--border-glass); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; transition: var(--transition-smooth);">
+                Clear Filters
+            </a>
+            {% endif %}
+        </form>
+    </div>
+    {% endif %}
 
     <!-- ── KPI Row ─────────────────────────────────────────────────── -->
     <div class="kpi-row">
@@ -134,6 +194,13 @@
                                    style="text-decoration:none;">
                                     <span class="student-id-badge">{{ s.student_id }}</span>
                                 </a>
+                                {% if s.year or s.branch or s.course %}
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                    {% if s.year %}<span>Yr {{ s.year }}</span>{% endif %}
+                                    {% if s.branch %}<span>• {{ s.branch }}</span>{% endif %}
+                                    {% if s.course %}<span>• {{ s.course }}</span>{% endif %}
+                                </div>
+                                {% endif %}
                             </td>
                             <td>Week {{ s.week_number }}</td>
                             <td>{{ "%.2f"|format(s.composite_engagement | float) }}</td>
