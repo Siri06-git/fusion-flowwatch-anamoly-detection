@@ -350,7 +350,12 @@ def upload_csv():
     try:
         df_headers = pd.read_csv(save_path, nrows=0)
         csv_columns = set(df_headers.columns.str.strip())
-        missing = [c for c in REQUIRED_COLUMNS if c not in csv_columns]
+        
+        required = list(REQUIRED_COLUMNS)
+        if session.get('portal_mode') == 'institution':
+            required.extend(['year', 'branch', 'course'])
+            
+        missing = [c for c in required if c not in csv_columns]
         if missing:
             os.remove(save_path)
             flash(f"Upload failed – missing columns: {', '.join(missing)}", 'error')
